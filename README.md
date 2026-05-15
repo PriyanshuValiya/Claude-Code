@@ -16,7 +16,7 @@ curl -fsSL https://raw.githubusercontent.com/PriyanshuValiya/Claude-Code/main/li
 2. Run:
 
 ```powershell
-irm https://raw.githubusercontent.com/PriyanshuValiya/Claude-Code/main/setup-claude-code.ps1 | iex
+irm https://raw.githubusercontent.com/PriyanshuValiya/Claude-Code/main/windows-claude-setup.ps1 | iex
 ```
 
 If you get a script execution policy error, run this one-time setup command first:
