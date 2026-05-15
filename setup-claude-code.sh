@@ -2,6 +2,7 @@
 # ============================================================
 #  setup-claude-code.sh
 #  Sets up Node.js (via NVM) + Claude Code on a fresh Ubuntu EC2
+#  Configured to use MiniMax via opencode.ai/zen
 #  Usage: bash setup-claude-code.sh
 # ============================================================
 
@@ -13,13 +14,31 @@ YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m'
 
-info()    { echo -e "${GREEN}[INFO]${NC}  $*"; }
-warn()    { echo -e "${YELLOW}[WARN]${NC}  $*"; }
-error()   { echo -e "${RED}[ERROR]${NC} $*"; exit 1; }
+info()  { echo -e "${GREEN}[INFO]${NC}  $*"; }
+warn()  { echo -e "${YELLOW}[WARN]${NC}  $*"; }
+error() { echo -e "${RED}[ERROR]${NC} $*"; exit 1; }
 
 # ── Config ────────────────────────────────────────────────────
-NODE_VERSION="22"          # LTS — works perfectly with Claude Code
-NVM_VERSION="v0.40.3"     # pin NVM release for reproducibility
+NODE_VERSION="22"       # LTS — works perfectly with Claude Code
+NVM_VERSION="v0.40.3"  # pin NVM release for reproducibility
+
+# ── Prompt for MiniMax API key ────────────────────────────────
+echo ""
+echo -e "${GREEN}============================================${NC}"
+echo -e "${GREEN}   Claude Code — MiniMax Setup${NC}"
+echo -e "${GREEN}============================================${NC}"
+echo ""
+
+while true; do
+  read -rsp "  Enter your MiniMax API key: " USER_API_KEY
+  echo ""
+  if [ -n "${USER_API_KEY}" ]; then
+    break
+  fi
+  warn "API key cannot be empty. Please try again."
+done
+
+info "API key received. Will be saved to ~/.claude/settings.json"
 
 # ── 1. System packages ────────────────────────────────────────
 info "Updating package lists and installing prerequisites..."
@@ -77,25 +96,53 @@ else
 fi
 
 # ── 7. Persist NVM in shell profile ──────────────────────────
-# NVM install script usually handles this, but we double-check.
 SHELL_RC="$HOME/.bashrc"
 if ! grep -q 'NVM_DIR' "${SHELL_RC}" 2>/dev/null; then
   info "Adding NVM init lines to ${SHELL_RC}..."
-  cat >> "${SHELL_RC}" <<'EOF'
+  cat >> "${SHELL_RC}" <<'BASHRC'
 
 # NVM — added by setup-claude-code.sh
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
-EOF
+BASHRC
 fi
+
+# ── 8. Write ~/.claude/settings.json ─────────────────────────
+CLAUDE_DIR="$HOME/.claude"
+SETTINGS_FILE="${CLAUDE_DIR}/settings.json"
+
+info "Creating ${SETTINGS_FILE}..."
+mkdir -p "${CLAUDE_DIR}"
+
+cat > "${SETTINGS_FILE}" <<SETTINGS
+{
+  "env": {
+    "ANTHROPIC_BASE_URL": "https://opencode.ai/zen",
+    "ANTHROPIC_MODEL": "minimax-m2.5-free",
+    "ANTHROPIC_API_KEY": "${USER_API_KEY}",
+    "ENABLE_TOOL_SEARCH": "true"
+  },
+  "model": "minimax-m2.5-free",
+  "theme": "dark"
+}
+SETTINGS
+
+# Lock down permissions — only owner can read the key
+chmod 600 "${SETTINGS_FILE}"
+info "Settings saved. Permissions set to 600 (owner read/write only)."
 
 # ── Done ──────────────────────────────────────────────────────
 echo ""
 info "✅  Setup complete!"
 echo ""
-echo "  Next steps:"
-echo "    1. Reload your shell:  source ~/.bashrc"
-echo "    2. Authenticate:       claude"
-echo "       (Browser-based OAuth or set ANTHROPIC_API_KEY env var for headless/CI)"
+echo "  What was configured:"
+echo "    • Node.js ${NODE_VERSION} LTS      (via NVM)"
+echo "    • Claude Code              (latest)"
+echo "    • Model:                   minimax-m2.5-free"
+echo "    • Base URL:                https://opencode.ai/zen"
+echo "    • Settings file:           ${SETTINGS_FILE}"
+echo ""
+echo "  Next step:"
+echo "    source ~/.bashrc && claude"
 echo ""
