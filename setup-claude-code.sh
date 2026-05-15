@@ -30,7 +30,7 @@ echo -e "${GREEN}============================================${NC}"
 echo ""
 
 while true; do
-  read -rsp "  Enter your MiniMax API key: " USER_API_KEY
+  read -rsp "  Enter your MiniMax API key: " USER_API_KEY </dev/tty
   echo ""
   if [ -n "${USER_API_KEY}" ]; then
     break
