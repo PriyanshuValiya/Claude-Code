@@ -1,4 +1,4 @@
-## Setup Claude Code using a Single Command
+## 🤖 Setup Claude Code using a Single Command
 
 ### Linux (Ubuntu)
 
